@@ -44,8 +44,8 @@ class MultiSearchTest < Minitest::Test
     products = nil
     time =
       Benchmark.measure do
-        regex_length_limit = 1_000_000
-        search_string = "Z" * (regex_length_limit + 1)
+        clause_limit = Searchkick.opensearch? ? 1_024 : 65_536
+        search_string = (["Z"] * (clause_limit + 1)).join(" ")
         products = Product.search(search_string, misspellings: {below: 1})
         query_start_time = Time.now
         begin

@@ -47,7 +47,13 @@ class MultiSearchTest < Minitest::Test
         regex_length_limit = 1_000_000
         search_string = "Z" * (regex_length_limit + 1)
         products = Product.search(search_string, misspellings: {below: 1})
-        Searchkick.multi_search([products])
+        query_start_time = Time.now
+        begin
+          Searchkick.multi_search([products])
+        rescue
+          puts("Caught exception after #{(Time.now - query_start_time).to_f} seconds.")
+          raise
+        end
       end.real
     puts(%(test_misspellings_below_with_errored_query time: #{time}))
     assert products.error

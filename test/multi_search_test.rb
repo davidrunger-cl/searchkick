@@ -28,17 +28,28 @@ class MultiSearchTest < Minitest::Test
 
   def test_misspellings_below_unmet
     store_names ["abc", "abd", "aee"]
-    products = Product.search("abc", misspellings: {below: 5})
-    Searchkick.multi_search([products])
+    products = nil
+    time =
+      Benchmark.measure do
+        products = Product.search("abc", misspellings: {below: 5})
+        Searchkick.multi_search([products])
+      end.real
+    puts(%(test_misspellings_below_unmet time: #{time}))
     assert_equal ["abc", "abd"], products.map(&:name)
   end
 
   def test_misspellings_below_with_errored_query
     store_names ["Product A"]
-    clause_limit = Searchkick.opensearch? ? 1_024 : 65_536
-    search_string = (["Z"] * (clause_limit + 1)).join(" ")
-    products = Product.search(search_string, misspellings: {below: 1})
-    Searchkick.multi_search([products])
+    require "benchmark"
+    products = nil
+    time =
+      Benchmark.measure do
+        regex_length_limit = 1_000_000
+        search_string = "Z" * (regex_length_limit + 1)
+        products = Product.search(search_string, misspellings: {below: 1})
+        Searchkick.multi_search([products])
+      end.real
+    puts(%(test_misspellings_below_with_errored_query time: #{time}))
     assert products.error
   end
 
